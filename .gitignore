@@ -1,10 +1,20 @@
+<<<<<<< HEAD
 # =========================
 # Python
 # =========================
+=======
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# Python cache files
+>>>>>>> d93671f7e4716a48bde98418a10db2e15403fd8b
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+<<<<<<< HEAD
 *.py[cod]
 *.so
 
@@ -54,11 +64,37 @@ instance/
 # =========================
 # Build / Distribution
 # =========================
+=======
+
+# Distribution / packaging
+>>>>>>> d93671f7e4716a48bde98418a10db2e15403fd8b
 build/
 dist/
 *.egg-info/
 
+<<<<<<< HEAD
 # =========================
 # Jupyter
 # =========================
 .ipynb_checkpoints/
+=======
+# Flask
+instance/
+.webassets-cache
+
+# Environment variables
+.env
+
+# VS Code
+.vscode/
+
+# PyCharm
+.idea/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+>>>>>>> d93671f7e4716a48bde98418a10db2e15403fd8b
