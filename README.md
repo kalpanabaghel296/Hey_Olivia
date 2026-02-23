@@ -98,6 +98,13 @@ Activate (Windows PowerShell):
        or
     pip install numpy sounddevice SpeechRecognition googletrans==4.0.0-rc1 requests pyttsx3  
 
+### 5. To run the backend from root folder
+    python -m backend.app
+
+### 6. To run the assistant from root folder
+    python -m backend.core.assistant
+
+# To run the assistant responsibly, run thr backend first    
 ------------------------------------------------------------------------
 
 ## requirements.txt
@@ -109,13 +116,7 @@ Make sure your requirements.txt contains:
     pyttsx3==2.90
     nltk==3.8.1
     scikit-learn==1.3.0
-
-------------------------------------------------------------------------
-
-## Running the Project
-
-    python app.py
-
+    
 ------------------------------------------------------------------------
 
 ## Common Error
