@@ -2,13 +2,13 @@ import sounddevice as sd
 import numpy as np
 import speech_recognition as sr
 
-WAKE_WORD = "hey olivia"
+WAKE_WORD = "olivia"
 
 def listen_for_wake_word():
     fs = 16000
     r = sr.Recognizer()
 
-    print("🟢 Waiting for wake word: 'Hey Olivia'")
+    print("🟢 Waiting for wake word: 'Olivia'")
 
     audio = sd.rec(int(3 * fs), samplerate=fs, channels=1)
     sd.wait()
