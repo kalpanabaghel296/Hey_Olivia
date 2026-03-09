@@ -1,6 +1,6 @@
 from flask import Flask,request, jsonify
-from voice.listener import listen_command
-from brain.processor import process_command
+from backend.voice.listener import listen_command
+from backend.brain.processor import process_command
 
 app = Flask(__name__)
 
