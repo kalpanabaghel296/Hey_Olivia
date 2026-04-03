@@ -10,6 +10,7 @@ system = SystemController()
 browser = BrowserController()
 automation = AutomationController()
 
+
 def process_command(text):
 
     text = text.lower().strip()
@@ -27,7 +28,7 @@ def process_command(text):
     if "hello" in text or "hi" in text:
         return "GREETING", "Hello, how can I help you?"
 
-    # ---------------- TIME ---------------- 
+    # ---------------- TIME ----------------
     if "time" in text:
         now = datetime.datetime.now().strftime("%H:%M")
         return "TIME", f"The current time is {now}"
@@ -38,6 +39,19 @@ def process_command(text):
         if "youtube" in text:
             result = browser.open_youtube()
             return "OPEN_YOUTUBE", result["message"]
+
+        if "teams" in text:
+            teams_paths = [
+                os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Teams\current\Teams.exe"),
+                r"C:\Program Files\Microsoft Teams\current\Teams.exe"
+            ]
+
+            for path in teams_paths:
+                if os.path.exists(path):
+                    subprocess.Popen(path, shell=True)
+                    return "OPEN_TEAMS", "Opening Microsoft Teams"
+
+            return "OPEN_TEAMS", "Microsoft Teams not found"
 
         app_name = text.replace("open ", "").strip()
         result = system.open_app(app_name)
@@ -60,7 +74,7 @@ def process_command(text):
         return "LOCK", result["message"]
 
     # ---------------- GOOGLE SEARCH ----------------
-    if text.startswith("search "):
+    if text.startswith("search ") and "youtube" not in text:
         query = text.replace("search ", "").strip()
         result = browser.search_google(query)
 
@@ -69,6 +83,12 @@ def process_command(text):
     # ---------------- YOUTUBE SEARCH ----------------
     if text.startswith("play "):
         query = text.replace("play ", "").strip()
+        result = browser.search_youtube(query)
+
+        return "YOUTUBE_SEARCH", result["message"]
+
+    if "search" in text and "youtube" in text:
+        query = text.replace("search", "").replace("on youtube", "").strip()
         result = browser.search_youtube(query)
 
         return "YOUTUBE_SEARCH", result["message"]
@@ -100,29 +120,5 @@ def process_command(text):
         result = automation.close_tab()
         return "CLOSE_TAB", result["message"]
 
-    # Special handling for Microsoft Teams
-    if "teams" in app:
-        teams_paths = [
-            os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Teams\Update.exe --processStart Teams.exe"),
-            os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Teams\current\Teams.exe")
-        ]
-
-    for path in teams_paths:
-        try:
-            subprocess.Popen(path, shell=True)
-            return {
-                "status": "success",
-                "message": "Opening Microsoft Teams"
-            }
-        except:
-            pass
-
-    if "search" in text and "youtube" in text:
-        query = text.replace("search", "").replace("on youtube", "")
-        return browser.browser_controller.search_youtube(query)
-
-    elif "play" in text:
-        query = text.replace("play", "")
-        return browser.browser_controller.play_youtube(query)        
     # ---------------- FALLBACK ----------------
     return "UNKNOWN", "Sorry, I did not understand that."
