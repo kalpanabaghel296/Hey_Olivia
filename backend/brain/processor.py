@@ -1,6 +1,7 @@
 from backend.system.system_controller import SystemController
 from backend.browser.browser_controller import BrowserController
 from backend.automation.automation_controller import AutomationController
+from backend.utils.llm_client import GroqClient
 
 import datetime
 import os
@@ -10,119 +11,123 @@ system = SystemController()
 browser = BrowserController()
 automation = AutomationController()
 
+llm = GroqClient()
+
+
 def process_command(text):
 
-    text = text.lower().strip()
+    try:
+        text = text.lower().strip()
 
-    # ---------------- IDENTITY ----------------
-    if "name" in text or "what is your name" in text:
-        return "IDENTITY", "Hello! My name is Olivia, your AI desktop assistant."
+        # ---------------- IDENTITY ----------------
+        if "name" in text or "what is your name" in text:
+            return "IDENTITY", "Hello! My name is Olivia, your AI desktop assistant."
 
-    if "doing" in text or "what are you doing" in text:
-        return "STATUS", "I am here to help you with your work."
+        if "doing" in text or "what are you doing" in text:
+            return "STATUS", "I am here to help you with your work."
 
-    if "created" in text or "who made you" in text:
-        return "CREATOR", "I was developed to be your personal smart assistant."
+        if "created" in text or "who made you" in text:
+            return "CREATOR", "I was developed to be your personal smart assistant."
 
-    if "hello" in text or "hi" in text:
-        return "GREETING", "Hello, how can I help you?"
+        if "hello" in text or "hi" in text:
+            return "GREETING", "Hello, how can I help you?"
 
-    # ---------------- TIME ---------------- 
-    if "time" in text:
-        now = datetime.datetime.now().strftime("%H:%M")
-        return "TIME", f"The current time is {now}"
+        # ---------------- TIME ---------------- 
+        if "time" in text:
+            now = datetime.datetime.now().strftime("%H:%M")
+            return "TIME", f"The current time is {now}"
 
-    # ---------------- OPEN APPLICATION ----------------
-    if text.startswith("open "):
+        # ---------------- OPEN APPLICATION ----------------
+        if text.startswith("open "):
 
-        if "youtube" in text:
-            result = browser.open_youtube()
-            return "OPEN_YOUTUBE", result["message"]
+            if "youtube" in text:
+                result = browser.open_youtube()
+                return "OPEN_YOUTUBE", result.get("message", "Opening YouTube")
 
-        app_name = text.replace("open ", "").strip()
-        result = system.open_app(app_name)
+            app_name = text.replace("open ", "").strip()
+            result = system.open_app(app_name)
 
-        return "OPEN_APP", result["message"]
+            return "OPEN_APP", result.get("message", f"Opening {app_name}")
 
-    # ---------------- SHUTDOWN ----------------
-    if "shutdown" in text:
-        result = system.shutdown()
-        return "SHUTDOWN", result["message"]
+        # ---------------- SHUTDOWN ----------------
+        if "shutdown" in text:
+            result = system.shutdown()
+            return "SHUTDOWN", result.get("message", "Shutting down")
 
-    # ---------------- RESTART ----------------
-    if "restart" in text:
-        result = system.restart()
-        return "RESTART", result["message"]
+        # ---------------- RESTART ----------------
+        if "restart" in text:
+            result = system.restart()
+            return "RESTART", result.get("message", "Restarting")
 
-    # ---------------- LOCK ----------------
-    if "lock" in text:
-        result = system.lock()
-        return "LOCK", result["message"]
+        # ---------------- LOCK ----------------
+        if "lock" in text:
+            result = system.lock()
+            return "LOCK", result.get("message", "Locking system")
 
-    # ---------------- GOOGLE SEARCH ----------------
-    if text.startswith("search "):
-        query = text.replace("search ", "").strip()
-        result = browser.search_google(query)
+        # ---------------- GOOGLE SEARCH ----------------
+        if text.startswith("search "):
+            query = text.replace("search ", "").strip()
+            result = browser.search_google(query)
+            return "SEARCH_GOOGLE", result.get("message", f"Searching {query}")
 
-        return "SEARCH_GOOGLE", result["message"]
+        # ---------------- YOUTUBE SEARCH ----------------
+        if text.startswith("play "):
+            query = text.replace("play ", "").strip()
+            result = browser.search_youtube(query)
+            return "YOUTUBE_SEARCH", result.get("message", f"Playing {query}")
 
-    # ---------------- YOUTUBE SEARCH ----------------
-    if text.startswith("play "):
-        query = text.replace("play ", "").strip()
-        result = browser.search_youtube(query)
+        # ---------------- AUTOMATION ----------------
+        if "scroll down" in text:
+            result = automation.scroll_down()
+            return "SCROLL_DOWN", result.get("message", "Scrolling down")
 
-        return "YOUTUBE_SEARCH", result["message"]
+        if "scroll up" in text:
+            result = automation.scroll_up()
+            return "SCROLL_UP", result.get("message", "Scrolling up")
 
-    # ---------------- AUTOMATION ----------------
-    if "scroll down" in text:
-        result = automation.scroll_down()
-        return "SCROLL_DOWN", result["message"]
+        if text.startswith("type "):
+            message = text.replace("type ", "").strip()
+            result = automation.type_text(message)
+            return "TYPE_TEXT", result.get("message", "Typing text")
 
-    if "scroll up" in text:
-        result = automation.scroll_up()
-        return "SCROLL_UP", result["message"]
+        if "press enter" in text:
+            result = automation.press_enter()
+            return "ENTER", result.get("message", "Pressed enter")
 
-    if text.startswith("type "):
-        message = text.replace("type ", "").strip()
-        result = automation.type_text(message)
+        if "switch tab" in text:
+            result = automation.switch_tab()
+            return "SWITCH_TAB", result.get("message", "Switched tab")
 
-        return "TYPE_TEXT", result["message"]
+        if "close tab" in text:
+            result = automation.close_tab()
+            return "CLOSE_TAB", result.get("message", "Closed tab")
 
-    if "press enter" in text:
-        result = automation.press_enter()
-        return "ENTER", result["message"]
+        # ---------------- MICROSOFT TEAMS ----------------
+        if "teams" in text:
+            teams_paths = [
+                os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Teams\Update.exe --processStart Teams.exe"),
+                os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Teams\current\Teams.exe")
+            ]
 
-    if "switch tab" in text:
-        result = automation.switch_tab()
-        return "SWITCH_TAB", result["message"]
+            for path in teams_paths:
+                try:
+                    subprocess.Popen(path, shell=True)
+                    return "OPEN_TEAMS", "Opening Microsoft Teams"
+                except:
+                    continue
 
-    if "close tab" in text:
-        result = automation.close_tab()
-        return "CLOSE_TAB", result["message"]
+        # ---------------- EXTRA YOUTUBE ----------------
+        if "search" in text and "youtube" in text:
+            query = text.replace("search", "").replace("on youtube", "").strip()
+            result = browser.search_youtube(query)
+            return "YOUTUBE_SEARCH", result.get("message", f"Searching YouTube for {query}")
 
-    # Special handling for Microsoft Teams
-    if "teams" in app:
-        teams_paths = [
-            os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Teams\Update.exe --processStart Teams.exe"),
-            os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Teams\current\Teams.exe")
-        ]
+        # ---------------- 🧠 LLM FALLBACK ----------------
+        print("🤖 Sending to Groq...")
 
-    for path in teams_paths:
-        try:
-            subprocess.Popen(path, shell=True)
-            return {
-                "status": "success",
-                "message": "Opening Microsoft Teams"
-            }
-        except:
-            pass
+        response = llm.generate(text)   # ✅ FIXED (important)
+        return "LLM_RESPONSE", response
 
-    if "search" in text and "youtube" in text:
-        query = text.replace("search", "").replace("on youtube", "")
-        return browser.browser_controller.search_youtube(query)
-
-    elif "play" in text:
-        query = text.replace("play", "")
-        return browser.browser_controller.play_youtube(query)        
-    # ---------------- FALLBACK ----------------
-    return "UNKNOWN", "Sorry, I did not understand that."
+    except Exception as e:
+        print("❌ Processor Error:", e)
+        return "ERROR", f"Something went wrong: {str(e)}"
