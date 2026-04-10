@@ -44,7 +44,7 @@ User hears response
 
 ## Tech Stack
 
--   Language: Python 3.10
+-   Language: Python 3.11
 -   Backend: Flask
 -   Speech-to-Text: SpeechRecognition (Google API)
 -   NLP: NLTK
@@ -58,9 +58,9 @@ User hears response
 
 ## Python Version Requirement
 
-This project requires Python 3.10.
+This project requires Python 3.11.
 
-Scikit-learn 1.3.0 works properly with Python 3.10. Using Python 3.12 or higher may cause installation errors.
+Scikit-learn 1.3.0 works properly with Python 3.11.X Using Python 3.12 or higher may cause installation errors.
 
 Check your Python version:
 
@@ -82,7 +82,7 @@ While installing: - Select "Add Python to PATH" - Choose "Install for all users"
 
 ### 2. Create Virtual Environment
 
-    py -3.10 -m venv venv
+    py -3.11 -m venv venv
 
 Activate (Windows PowerShell):
 
@@ -123,9 +123,9 @@ Make sure your requirements.txt contains:
 
 If you get Microsoft C++ Build Tools error:
 
-Reason: - Python version is not 3.10 - Or pip is outdated
+Reason: - Python version is not 3.11 - Or pip is outdated
 
-Solution: - Install Python 3.10 - Upgrade pip - Recreate virtual
+Solution: - Install Python 3.11 - Upgrade pip - Recreate virtual
 environment - Install requirements again
 
 ## To prevent from pushing the venv and cached files if .gitignore does not work:
