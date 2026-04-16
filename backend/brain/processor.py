@@ -13,7 +13,6 @@ automation = AutomationController()
 
 llm = GroqClient()
 
-
 def process_command(text):
 
     try:
@@ -32,7 +31,7 @@ def process_command(text):
         if "hello" in text or "hi" in text:
             return "GREETING", "Hello, how can I help you?"
 
-        # ---------------- TIME ---------------- 
+        # ---------------- TIME ----------------
         if "time" in text:
             now = datetime.datetime.now().strftime("%H:%M")
             return "TIME", f"The current time is {now}"
@@ -43,6 +42,19 @@ def process_command(text):
             if "youtube" in text:
                 result = browser.open_youtube()
                 return "OPEN_YOUTUBE", result.get("message", "Opening YouTube")
+
+            if "teams" in text:
+                teams_paths = [
+                    os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Teams\current\Teams.exe"),
+                    r"C:\Program Files\Microsoft Teams\current\Teams.exe"
+                ]
+
+                for path in teams_paths:
+                    if os.path.exists(path):
+                        subprocess.Popen(path, shell=True)
+                        return "OPEN_TEAMS", "Opening Microsoft Teams"
+
+                return "OPEN_TEAMS", "Microsoft Teams not found"
 
             app_name = text.replace("open ", "").strip()
             result = system.open_app(app_name)
@@ -65,7 +77,7 @@ def process_command(text):
             return "LOCK", result.get("message", "Locking system")
 
         # ---------------- GOOGLE SEARCH ----------------
-        if text.startswith("search "):
+        if text.startswith("search ") and "youtube" not in text:
             query = text.replace("search ", "").strip()
             result = browser.search_google(query)
             return "SEARCH_GOOGLE", result.get("message", f"Searching {query}")
@@ -75,6 +87,11 @@ def process_command(text):
             query = text.replace("play ", "").strip()
             result = browser.search_youtube(query)
             return "YOUTUBE_SEARCH", result.get("message", f"Playing {query}")
+
+        if "search" in text and "youtube" in text:
+            query = text.replace("search", "").replace("on youtube", "").strip()
+            result = browser.search_youtube(query)
+            return "YOUTUBE_SEARCH", result.get("message", f"Searching YouTube for {query}")
 
         # ---------------- AUTOMATION ----------------
         if "scroll down" in text:
@@ -101,26 +118,6 @@ def process_command(text):
         if "close tab" in text:
             result = automation.close_tab()
             return "CLOSE_TAB", result.get("message", "Closed tab")
-
-        # ---------------- MICROSOFT TEAMS ----------------
-        if "teams" in text:
-            teams_paths = [
-                os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Teams\Update.exe --processStart Teams.exe"),
-                os.path.expandvars(r"%LOCALAPPDATA%\Microsoft\Teams\current\Teams.exe")
-            ]
-
-            for path in teams_paths:
-                try:
-                    subprocess.Popen(path, shell=True)
-                    return "OPEN_TEAMS", "Opening Microsoft Teams"
-                except:
-                    continue
-
-        # ---------------- EXTRA YOUTUBE ----------------
-        if "search" in text and "youtube" in text:
-            query = text.replace("search", "").replace("on youtube", "").strip()
-            result = browser.search_youtube(query)
-            return "YOUTUBE_SEARCH", result.get("message", f"Searching YouTube for {query}")
 
         # ---------------- 🧠 LLM FALLBACK ----------------
         print("🤖 Sending to Groq...")
