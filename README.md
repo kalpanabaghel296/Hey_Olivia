@@ -42,6 +42,30 @@ User hears response
 
 ------------------------------------------------------------------------
 
+## 🔥 New Feature: Custom Keyword Commands
+
+Now Olivia supports custom keyword-based automation.
+
+- You can add your own keywords from frontend
+- Attach multiple actions (apps / URLs)
+- Speak the keyword → all actions execute automatically
+
+### Updated Flow:
+
+User Voice\
+↓\
+Speech-to-Text\
+↓\
+process_command()\
+↓\
+1. Predefined Commands\
+2. Custom Commands (commands.json)\
+3. Groq API (fallback)\
+↓\
+Execution
+
+------------------------------------------------------------------------
+
 ## Tech Stack
 
 -   Language: Python 3.11
@@ -52,7 +76,6 @@ User hears response
 -   Frontend: HTML, CSS, JavaScript
 -   Text-to-Speech: pyttsx3
 -   Version Control: Git & GitHub
-<<<<<<< HEAD
 
 ------------------------------------------------------------------------
 
@@ -65,11 +88,6 @@ Scikit-learn 1.3.0 works properly with Python 3.11.X Using Python 3.12 or higher
 Check your Python version:
 
     python --version
-
-If Python 3.10 is not installed, download it from:
-https://www.python.org/downloads/release/python-31011/
-
-While installing: - Select "Add Python to PATH" - Choose "Install for all users"
 
 ------------------------------------------------------------------------
 
@@ -95,16 +113,51 @@ Activate (Windows PowerShell):
 ### 4. Install Dependencies
 
     pip install -r requirements.txt  
-       or
-    pip install numpy sounddevice SpeechRecognition googletrans==4.0.0-rc1 requests pyttsx3  
 
-### 5. To run the backend from root folder
+------------------------------------------------------------------------
+
+## ⚠️ Setup Groq API (IMPORTANT)
+
+If you face API errors, run this in PowerShell:
+
+    $env:GROQ_API_KEY="your_actual_api_key"
+
+OR add inside .env file:
+
+    GROQ_API_KEY=your_actual_api_key
+
+------------------------------------------------------------------------
+
+### 5. Run Backend
+
     python -m backend.app
 
-### 6. To run the assistant from root folder
+------------------------------------------------------------------------
+
+### 6. Run Assistant
+
     python -m backend.core.assistant
 
-# To run the assistant responsibly, run thr backend first    
+# To run the assistant responsibly, run the backend first    
+
+------------------------------------------------------------------------
+
+### 7. Run Frontend
+
+Open this file in browser:
+
+    frontend/index.html
+
+------------------------------------------------------------------------
+
+## 🖥 Frontend Features
+
+- Add keyword commands
+- Add up to 5 actions
+- Delete commands
+- Execute commands manually
+- Data saved in commands.json
+
 ------------------------------------------------------------------------
 
 ## requirements.txt
@@ -116,6 +169,7 @@ Make sure your requirements.txt contains:
     pyttsx3==2.90
     nltk==3.8.1
     scikit-learn==1.3.0
+    etc...
     
 ------------------------------------------------------------------------
 
@@ -128,11 +182,37 @@ Reason: - Python version is not 3.11 - Or pip is outdated
 Solution: - Install Python 3.11 - Upgrade pip - Recreate virtual
 environment - Install requirements again
 
+------------------------------------------------------------------------
+
+## 🔧 New Common Issues
+
+### 1. Keyword not working
+
+- Check keyword is lowercase
+- Check commands.json is valid
+- Make sure run_command() is working
+
+### 2. Groq API Error
+
+Error:
+    Expecting value: line 1 column 1
+
+Fix:
+    $env:GROQ_API_KEY="your_actual_api_key"
+
+### 3. Frontend not saving data
+
+- Make sure backend is running
+- Check API URL: http://127.0.0.1:5000
+
+------------------------------------------------------------------------
+
 ## To prevent from pushing the venv and cached files if .gitignore does not work:
 
     git rm -r --cached .
 
 ------------------------------------------------------------------------
+
 ## Conclusion
 
 Hey_Olivia demonstrates how Speech Recognition, NLP, Machine Learning,
