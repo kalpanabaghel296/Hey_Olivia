@@ -2,6 +2,7 @@ from backend.system.system_controller import SystemController
 from backend.browser.browser_controller import BrowserController
 from backend.automation.automation_controller import AutomationController
 from backend.utils.llm_client import GroqClient
+from backend.run_command import run_command
 
 import datetime
 import os
@@ -119,6 +120,10 @@ def process_command(text):
             result = automation.close_tab()
             return "CLOSE_TAB", result.get("message", "Closed tab")
 
+        words = text.split()
+        for word in words:
+            if run_command(word):
+                return "CUSTOM_COMMAND", "Executing your saved command"
         # ---------------- 🧠 LLM FALLBACK ----------------
         print("🤖 Sending to Groq...")
 

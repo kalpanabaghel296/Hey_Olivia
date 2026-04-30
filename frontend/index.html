@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Olivia Command Hub</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="container">
+
+  <h1>⚡ Olivia Command Hub</h1>
+
+  <!-- CREATE -->
+  <div class="card">
+    <h2>Create Command</h2>
+
+    <input id="keyword" placeholder="Enter keyword (e.g. code)">
+
+    <div id="actions"></div>
+
+    <div class="btn-group">
+      <button onclick="addAction()">+ Add Action</button>
+      <button class="primary" onclick="save()">Save Command</button>
+    </div>
+  </div>
+
+  <!-- LIST -->
+  <div class="card">
+    <h2>Saved Commands</h2>
+    <div id="list"></div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
