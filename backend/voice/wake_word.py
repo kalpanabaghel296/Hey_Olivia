@@ -53,3 +53,5 @@ def listen_for_wake_word():
     except Exception as e:
         print("Error:", e)
         return False
+    
+    
