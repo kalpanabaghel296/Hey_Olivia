@@ -1,47 +1,71 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
+import json
+import os
+
 from backend.voice.listener import listen_command
-from backend.brain.processor import process_command
 from backend.nlp_engine import extract_actions
 from backend.executor import ActionExecutor
+from backend.run_command import run_command
 from backend.utils.llm_client import GroqClient
 
-print("🚀 Starting Olivia Backend...")
-
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
-# Initialize executor once
+print("🚀 Olivia Backend Started")
+
+# INIT
 executor = ActionExecutor()
 llm = GroqClient()
 
+# ---------------- FILE STORAGE ----------------
+DATA_FILE = os.path.join(os.path.dirname(__file__), "commands.json")
+
+
+def load_commands():
+    if not os.path.exists(DATA_FILE) or os.path.getsize(DATA_FILE) == 0:
+        return []
+
+    try:
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    except:
+        return []
+
+
+def save_commands(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
+
+
+# ---------------- HELPERS ----------------
+def normalize_keyword(text):
+    text = text.lower().strip()
+    if text.startswith("open "):
+        text = text.replace("open ", "").strip()
+    return text
+
+
 def is_question(text):
-    q_words = ["what", "who", "when", "why", "how", "tell", "explain","explain"]
+    q_words = ["what", "who", "when", "why", "how", "tell", "explain", "wish"]
     return any(word in text.lower() for word in q_words)
+
 
 def is_valid_action(actions):
     if not actions or "actions" not in actions:
         return False
 
     valid_intents = [
-        "open_app",
-        "open_website",
-        "search_google",
-        "open_youtube",
-        "search_youtube",
-        "play_youtube",
-        "scroll_down",
-        "scroll_up",
-        "type_text",
-        "press_enter",
-        "close_tab",
-        "switch_tab",
-        "shutdown",
-        "restart"
+        "open_app", "open_website", "search_google",
+        "open_youtube", "search_youtube", "play_youtube",
+        "scroll_down", "scroll_up", "type_text",
+        "press_enter", "close_tab", "switch_tab",
+        "shutdown", "restart"
     ]
 
     for action in actions["actions"]:
         intent = action.get("intent")
 
-        # ❌ reject empty or unknown intent
         if not intent or intent.strip() == "":
             return False
 
@@ -50,113 +74,136 @@ def is_valid_action(actions):
 
     return True
 
-@app.route("/")
-def home():
-    return "AI Voice Assistant is running!"
 
-
-# -------------------------------
-# CORE PROCESS FUNCTION
-# -------------------------------
+# ---------------- CORE LOGIC ----------------
 def process_user_input(text):
     print("User Input:", text)
 
-    # ✅ Step 1: Direct Question
+    # 🔥 STEP 1: CUSTOM COMMAND
+    keyword = normalize_keyword(text)
+
+    if run_command(keyword):
+        print("⚡ Custom command executed")
+
+        return {
+            "intent": "CUSTOM_COMMAND",
+            "response": f"Executing {keyword}"
+        }
+
+    # 🔥 STEP 2: QUESTION → AI
     if is_question(text):
         print("🤖 Direct question → Groq")
 
-        answer = llm.generate(text)
-
         return {
             "intent": "AI_RESPONSE",
-            "response": answer
+            "response": llm.generate(text)
         }
 
-    # Step 2: Try NLP extraction
+    # 🔥 STEP 3: NLP
     actions = extract_actions(text)
 
-    # Step 3: If valid action → execute
     if is_valid_action(actions):
+        print("✅ NLP Actions:", actions)
+
         responses = executor.execute(actions)
 
         final_response = " and ".join([r for r in responses if r])
 
-        # 🔥 IMPORTANT FIX
         if final_response.strip():
             return {
                 "intent": "ACTION_EXECUTED",
                 "response": final_response
             }
 
-    # 🔥 Step 4: EVERYTHING ELSE → GROQ
+    # 🔥 STEP 4: FALLBACK
     print("🤖 Fallback → Groq")
-
-    answer = llm.generate(text)
 
     return {
         "intent": "AI_RESPONSE",
-        "response": answer
+        "response": llm.generate(text)
     }
-# -------------------------------
-# MAIN PROCESS API
-# -------------------------------
+
+
+# ---------------- COMMAND APIs ----------------
+
+@app.route("/command", methods=["POST", "OPTIONS"])
+def add_command():
+    if request.method == "OPTIONS":
+        return jsonify({"status": "ok"}), 200
+
+    data = request.get_json()
+    keyword = normalize_keyword(data.get("keyword", ""))
+    actions = data.get("actions", [])
+
+    if not keyword:
+        return jsonify({"error": "keyword required"}), 400
+
+    cmds = load_commands()
+    cmds = [c for c in cmds if c["keyword"] != keyword]
+
+    cmds.append({
+        "keyword": keyword,
+        "actions": actions
+    })
+
+    save_commands(cmds)
+
+    return jsonify({"message": "saved"})
+
+
+@app.route("/commands", methods=["GET"])
+def get_commands():
+    return jsonify(load_commands())
+
+
+@app.route("/command/<keyword>", methods=["DELETE"])
+def delete_command(keyword):
+    keyword = normalize_keyword(keyword)
+
+    cmds = load_commands()
+    cmds = [c for c in cmds if c["keyword"] != keyword]
+
+    save_commands(cmds)
+
+    return jsonify({"message": "deleted"})
+
+
+@app.route("/execute", methods=["POST"])
+def execute_command():
+    data = request.get_json()
+    keyword = normalize_keyword(data.get("keyword", ""))
+
+    if run_command(keyword):
+        return jsonify({"message": "executed"})
+
+    return jsonify({"error": "not found"}), 404
+
+
+# ---------------- MAIN API ----------------
 @app.route("/process", methods=["POST"])
 def process():
-    try:
-        data = request.get_json()
+    data = request.get_json()
+    text = data.get("text", "").strip()
 
-        if not data:
-            return jsonify({
-                "intent": "ERROR",
-                "response": "No JSON data received"
-            }), 400
+    if not text:
+        return jsonify({"error": "No input"}), 400
 
-        text = data.get("text", "").strip()
+    result = process_user_input(text)
 
-        if not text:
-            return jsonify({
-                "intent": "ERROR",
-                "response": "No input text provided"
-            }), 400
-
-        # 🔥 USE NEW PIPELINE
-        result = process_user_input(text)
-
-        return jsonify(result)
-
-    except Exception as e:
-        print("❌ Error in /process:", e)
-
-        return jsonify({
-            "intent": "ERROR",
-            "response": f"Internal server error: {str(e)}"
-        }), 500
+    return jsonify(result)
 
 
-# -------------------------------
-# VOICE INPUT API
-# -------------------------------
-@app.route("/listen")
+# ---------------- VOICE ----------------
+@app.route("/listen", methods=["GET"])
 def listen():
     try:
         text = listen_command()
-
-        return jsonify({
-            "text": text
-        })
+        return jsonify({"text": text})
 
     except Exception as e:
-        print("❌ Error in /listen:", e)
-
-        return jsonify({
-            "text": "",
-            "error": str(e)
-        }), 500
+        return jsonify({"error": str(e)})
 
 
-# -------------------------------
-# RUN SERVER
-# -------------------------------
+# ---------------- START ----------------
 if __name__ == "__main__":
-    print("🔥 Flask server starting on port 5000...")
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(port=5000, debug=True)
